@@ -1,0 +1,447 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/*  Base: escritorio cálido con motas suaves                           */
+/* ------------------------------------------------------------------ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-patrick), "Segoe Print", cursive;
+  background-color: #efe5cf;
+  background-image:
+    radial-gradient(rgba(160, 130, 80, 0.16) 1.1px, transparent 1.1px),
+    radial-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+  background-size:
+    22px 22px,
+    46px 46px;
+  background-position:
+    0 0,
+    11px 13px;
+}
+
+::selection {
+  background: rgba(253, 224, 71, 0.65);
+  color: #44403c;
+}
+
+/* ------------------------- Fuentes a mano --------------------------- */
+
+.font-hand-caveat {
+  font-family: var(--font-caveat), cursive;
+}
+.font-hand-kalam {
+  font-family: var(--font-kalam), cursive;
+}
+.font-hand-patrick {
+  font-family: var(--font-patrick), cursive;
+}
+.font-hand-shadows {
+  font-family: var(--font-shadows), cursive;
+}
+
+/* --------------------------- Papel rayado --------------------------- */
+/* Las variables --paper-bg y --paper-line las fija cada componente.   */
+
+.paper-lines-sm {
+  background-color: var(--paper-bg);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 25px,
+    var(--paper-line) 25px,
+    var(--paper-line) 26px
+  );
+  background-position: 0 6px;
+}
+
+.paper-lines-lg {
+  background-color: var(--paper-bg);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 33px,
+    var(--paper-line) 33px,
+    var(--paper-line) 34px
+  );
+  background-position: 0 10px;
+}
+
+/* Margen rojo vertical de cuaderno */
+.paper-margin {
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    transparent 46px,
+    rgba(248, 113, 113, 0.5) 46px,
+    rgba(248, 113, 113, 0.5) 47.5px,
+    transparent 47.5px,
+    transparent 51px,
+    rgba(248, 113, 113, 0.28) 51px,
+    rgba(248, 113, 113, 0.28) 52px,
+    transparent 52px
+  );
+}
+
+/* ---------------------------- Washi tape ---------------------------- */
+
+.tape {
+  position: absolute;
+  width: 92px;
+  height: 26px;
+  border-radius: 2px;
+  opacity: 0.85;
+  box-shadow: 0 2px 4px rgba(68, 50, 20, 0.18);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.16) 0,
+      rgba(255, 255, 255, 0.16) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  clip-path: polygon(
+    2% 8%, 6% 0%, 94% 4%, 98% 12%, 100% 50%, 97% 88%, 93% 100%,
+    7% 96%, 3% 100%, 0% 55%
+  );
+  pointer-events: none;
+}
+
+/* ------------------------- Rotulador fosforito ---------------------- */
+
+.marker {
+  background-image: linear-gradient(
+    100deg,
+    rgba(253, 224, 71, 0) 0.5%,
+    rgba(253, 224, 71, 0.55) 4%,
+    rgba(250, 204, 21, 0.45) 55%,
+    rgba(253, 224, 71, 0.55) 96%,
+    rgba(253, 224, 71, 0) 99.5%
+  );
+  border-radius: 0.35em 0.15em 0.3em 0.2em;
+  padding: 0 0.18em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.marker-pink {
+  background-image: linear-gradient(
+    100deg,
+    rgba(249, 168, 212, 0) 0.5%,
+    rgba(249, 168, 212, 0.55) 4%,
+    rgba(249, 168, 212, 0.45) 55%,
+    rgba(249, 168, 212, 0.55) 96%,
+    rgba(249, 168, 212, 0) 99.5%
+  );
+  border-radius: 0.2em 0.35em 0.15em 0.3em;
+  padding: 0 0.18em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Subrayado ondulado dibujado a mano (SVG inline) */
+.squiggle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6' viewBox='0 0 40 6'%3E%3Cpath d='M0 3 Q 5 0.5, 10 3 T 20 3 T 30 3 T 40 3' fill='none' stroke='%23e11d48' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 40px 6px;
+  padding-bottom: 5px;
+}
+
+.squiggle-blue {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6' viewBox='0 0 40 6'%3E%3Cpath d='M0 3 Q 5 0.5, 10 3 T 20 3 T 30 3 T 40 3' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 40px 6px;
+  padding-bottom: 5px;
+}
+
+/* --------------------------- Animaciones ---------------------------- */
+
+@keyframes note-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(var(--rot, 0deg)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--rot, 0deg)) scale(1);
+  }
+}
+
+.note-in {
+  animation: note-in 0.5s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pop-in {
+  animation: pop-in 0.35s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.25s ease both;
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+.wiggle:hover {
+  animation: wiggle 0.45s ease-in-out;
+}
+
+@keyframes toast-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) rotate(-1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) rotate(-1.5deg);
+  }
+}
+
+.toast-up {
+  animation: toast-up 0.3s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes pencil-write {
+  0% {
+    transform: rotate(0deg) translate(0, 0);
+  }
+  25% {
+    transform: rotate(-8deg) translate(2px, -2px);
+  }
+  50% {
+    transform: rotate(4deg) translate(5px, 0);
+  }
+  75% {
+    transform: rotate(-5deg) translate(8px, -2px);
+  }
+  100% {
+    transform: rotate(0deg) translate(10px, 0);
+  }
+}
+
+.pencil-write {
+  animation: pencil-write 1s ease-in-out infinite alternate;
+}
+
+/* ------------------------- Volteo 3D (flashcards) ------------------- */
+
+.perspective-1400 {
+  perspective: 1400px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.flip-inner {
+  transition: transform 0.65s cubic-bezier(0.35, 0.15, 0.25, 1);
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.face-back {
+  transform: rotateY(180deg);
+}
+
+/* --------------------------- Scrollbars ----------------------------- */
+
+.nice-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.nice-scroll::-webkit-scrollbar-track {
+  background: rgba(120, 90, 40, 0.08);
+  border-radius: 99px;
+}
+
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: rgba(146, 110, 58, 0.4);
+  border-radius: 99px;
+}
+
+.nice-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(146, 110, 58, 0.65);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --------------------------- Inputs papel --------------------------- */
+
+.input-paper {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid rgba(168, 130, 70, 0.35);
+  border-radius: 10px 14px 11px 15px / 14px 10px 15px 11px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.input-paper:focus {
+  outline: none;
+  background: #fffef8;
+  border-color: rgba(217, 119, 6, 0.65);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+}
+
+/* Botón principal tipo "boli sobre papel" */
+.btn-primary-hand {
+  background: linear-gradient(160deg, #d97706, #b45309);
+  box-shadow:
+    0 3px 0 #92400e,
+    0 8px 16px rgba(146, 64, 14, 0.28);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.2s ease;
+}
+
+.btn-primary-hand:hover {
+  filter: brightness(1.06);
+}
+
+.btn-primary-hand:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #92400e,
+    0 4px 10px rgba(146, 64, 14, 0.25);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Oposita (mascota)                                                  */
+/* ------------------------------------------------------------------ */
+
+@keyframes mascot-walk {
+  0%, 100% { transform: translateY(0) rotate(-3deg) scale(1.03, 0.97); }
+  25% { transform: translateY(-13px) rotate(0deg) scale(0.98, 1.03); }
+  50% { transform: translateY(0) rotate(3deg) scale(1.03, 0.97); }
+  75% { transform: translateY(-13px) rotate(0deg) scale(0.98, 1.03); }
+}
+.mascot-walk { animation: mascot-walk 0.62s ease-in-out infinite; transform-origin: 50% 100%; }
+
+@keyframes mascot-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.014, 0.986); }
+}
+.mascot-idle { animation: mascot-breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+
+@keyframes mascot-hop {
+  0% { transform: translateY(0) scale(1.06, 0.94); }
+  30% { transform: translateY(-38px) rotate(-6deg) scale(0.96, 1.05); }
+  60% { transform: translateY(0) rotate(4deg) scale(1.07, 0.93); }
+  80% { transform: translateY(-10px) rotate(0deg); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+.mascot-hop { animation: mascot-hop 0.8s ease-out; transform-origin: 50% 100%; }
+
+@keyframes mascot-cheer {
+  0%, 100% { transform: translateY(0) rotate(-2.5deg); }
+  50% { transform: translateY(-14px) rotate(2.5deg); }
+}
+.mascot-cheer { animation: mascot-cheer 0.5s ease-in-out infinite; transform-origin: 50% 100%; }
+
+@keyframes mascot-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+.mascot-think { animation: mascot-sway 2.2s ease-in-out infinite; transform-origin: 50% 100%; }
+
+@keyframes bubble-in {
+  from { opacity: 0; margin-bottom: -8px; }
+  to { opacity: 1; margin-bottom: 0; }
+}
+.bubble-in { animation: bubble-in 0.3s cubic-bezier(0.22, 1.2, 0.36, 1) both; }
+
+/* ------------------------------------------------------------------ */
+/*  Carpetas, sellos y hoja de examen                                  */
+/* ------------------------------------------------------------------ */
+
+.folder-card {
+  transition: transform 0.3s cubic-bezier(0.22, 1.2, 0.36, 1), filter 0.3s;
+}
+.folder-card:hover {
+  transform: translateY(-6px) rotate(-0.8deg);
+  filter: drop-shadow(0 18px 18px rgba(80, 55, 15, 0.28));
+}
+
+@keyframes stamp-in {
+  0% { opacity: 0; transform: scale(2.6) rotate(-24deg); }
+  60% { opacity: 1; transform: scale(0.94) rotate(-9deg); }
+  100% { opacity: 0.92; transform: scale(1) rotate(-8deg); }
+}
+.stamp-in { animation: stamp-in 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px) rotate(-1deg); }
+  40% { transform: translateX(7px) rotate(1deg); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.shake { animation: shake 0.4s ease; }
+
+@keyframes bar-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+.bar-grow { animation: bar-grow 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) both; transform-origin: 50% 100%; }
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.option-btn {
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.option-btn:not(:disabled):hover {
+  transform: translateX(4px) rotate(-0.3deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-walk, .mascot-idle, .mascot-hop, .mascot-cheer, .mascot-think { animation: none; }
+}
