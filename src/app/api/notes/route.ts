@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { appMeta, notes } from "@/db/schema";
 import { SEED_NOTES } from "@/lib/seed";
-import { fail, findOwnLaw, workspaceOf } from "@/lib/server";
+import { dbFail, fail, findOwnLaw, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Siembra los apuntes de ejemplo solo la primera vez que un espacio de trabajo abre el cuaderno. */
 async function ensureSeeded(ws: string) {
@@ -23,6 +25,7 @@ export async function GET(request: Request) {
   const ws = workspaceOf(request);
   if (!ws) return fail("Falta el espacio de trabajo");
   try {
+    await ensureSchema();
     const lawIdParam = new URL(request.url).searchParams.get("lawId");
     const lawId = lawIdParam ? Number(lawIdParam) : null;
     if (!lawId) await ensureSeeded(ws);
@@ -30,11 +33,10 @@ export async function GET(request: Request) {
       .select()
       .from(notes)
       .where(lawId ? and(eq(notes.workspaceId, ws), eq(notes.lawId, lawId)) : eq(notes.workspaceId, ws))
-      .orderBy(desc(notes.createdAt));
+      .orderBy(desc(notes.createdAt), desc(notes.id));
     return NextResponse.json(rows);
   } catch (error) {
-    console.error("GET /api/notes", error);
-    return fail("No se pudieron cargar los apuntes", 500);
+    return dbFail(error);
   }
 }
 
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
   const ws = workspaceOf(request);
   if (!ws) return fail("Falta el espacio de trabajo");
   try {
+    await ensureSchema();
     const body = await request.json();
     const title = String(body.title ?? "").trim();
     const content = String(body.content ?? "").trim();
@@ -73,7 +76,6 @@ export async function POST(request: Request) {
       .returning();
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    console.error("POST /api/notes", error);
-    return fail("No se pudo guardar el apunte", 500);
+    return dbFail(error);
   }
 }

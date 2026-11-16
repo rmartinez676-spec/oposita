@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { lawArticles, laws } from "@/db/schema";
-import { fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
+import { dbFail, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -14,6 +16,7 @@ export async function GET(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     const articles = await db
@@ -32,8 +35,7 @@ export async function GET(request: Request, { params }: Ctx) {
       .orderBy(asc(lawArticles.position));
     return NextResponse.json({ law, articles });
   } catch (error) {
-    console.error("GET /api/laws/[id]", error);
-    return fail("No se pudo abrir la ley", 500);
+    return dbFail(error);
   }
 }
 
@@ -43,6 +45,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     const body = await request.json();
@@ -57,8 +60,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
     const [updated] = await db.update(laws).set(updates).where(eq(laws.id, id)).returning();
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("PATCH /api/laws/[id]", error);
-    return fail("No se pudo actualizar la ley", 500);
+    return dbFail(error);
   }
 }
 
@@ -68,12 +70,12 @@ export async function DELETE(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     await db.delete(laws).where(eq(laws.id, id));
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("DELETE /api/laws/[id]", error);
-    return fail("No se pudo borrar la ley", 500);
+    return dbFail(error);
   }
 }

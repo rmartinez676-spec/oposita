@@ -4,40 +4,39 @@ import { db } from "@/db";
 import { laws } from "@/db/schema";
 import type { Scope } from "./quizTypes";
 
-const WS_VALID = /^[A-Za-z0-9_-]{8,64}$/;
-
 /**
- * Cada visitante manda su id de espacio de trabajo por tres vías (la primera válida gana):
- * cabecera x-workspace-id, parámetro ?ws= o cookie oposita_ws.
+ * Código de espacio de trabajo: cabecera x-workspace-id (la inyecta el middleware)
+ * o, como respaldo, la cookie oposita_ws. Así ningún cliente se queda fuera.
  */
 export function workspaceOf(req: Request): string | null {
-  const fromHeader = (req.headers.get("x-workspace-id") ?? "").trim();
-  if (WS_VALID.test(fromHeader)) return fromHeader;
-
-  let fromQuery = "";
-  try {
-    fromQuery = (new URL(req.url).searchParams.get("ws") ?? "").trim();
-  } catch {
-    /* url no analizable */
-  }
-  if (WS_VALID.test(fromQuery)) return fromQuery;
-
   const cookie = req.headers.get("cookie") ?? "";
-  const m = cookie.match(/(?:^|;\s*)oposita_ws=([^;]+)/);
-  if (m) {
-    let fromCookie = m[1];
-    try {
-      fromCookie = decodeURIComponent(fromCookie);
-    } catch {
-      /* se usa tal cual */
-    }
-    if (WS_VALID.test(fromCookie)) return fromCookie;
-  }
-  return null;
+  const m = cookie.match(/(?:^|;\s*)oposita_ws=([A-Za-z0-9_-]{8,64})/);
+  if (m) return m[1];
+  const v = req.headers.get("x-workspace-id") ?? "";
+  return /^[A-Za-z0-9_-]{8,64}$/.test(v) ? v : null;
 }
 
 export function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+/** Traduce los errores de PostgreSQL a mensajes que se entienden en pantalla. */
+export function dbFail(error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
+  console.error("[db]", msg);
+  if (/relation .* does not exist|undefined table/i.test(msg)) {
+    return fail(
+      "La base de datos todavía no tiene las tablas. Pulsa «Reintentar»: se crean solas en unos segundos.",
+      500,
+    );
+  }
+  if (/DATABASE_URL|connect|ECONN|ETIMEDOUT|ENOTFOUND|terminated|SSL|certificate|password|authentication/i.test(msg)) {
+    return fail(
+      `No se pudo conectar a la base de datos. Revisa la variable DATABASE_URL en Vercel (la cadena de Neon, terminada en ?sslmode=require). Detalle: ${msg.slice(0, 140)}`,
+      500,
+    );
+  }
+  return fail(`Error interno: ${msg.slice(0, 160)}`, 500);
 }
 
 export function parseId(raw: string): number | null {

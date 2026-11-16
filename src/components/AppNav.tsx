@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Check, Copy, Eye, EyeOff, FolderOpen, KeyRound, Search, X } from "lucide-react";
+import { BookOpen, Check, Copy, Eye, EyeOff, FolderOpen, KeyRound, School, Search, Stethoscope, Upload, X } from "lucide-react";
 import { getWorkspaceId, setWorkspaceId } from "@/lib/client";
 
 const LINKS = [
   { href: "/", label: "Mi mesa", icon: FolderOpen },
   { href: "/oposiciones", label: "Oposiciones", icon: Search },
+  { href: "/academia", label: "Academia", icon: School },
   { href: "/apuntes", label: "Cuaderno", icon: BookOpen },
 ];
 
@@ -130,6 +131,12 @@ export default function AppNav() {
                 apuntes · tests · juegos
               </span>
             </span>
+            <span
+              title="Versión del código desplegado. Si tu web publicada no muestra «v3», tiene código antiguo: vuelve a desplegar."
+              className="hidden rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-bold text-stone-500 ring-1 ring-black/10 lg:inline"
+            >
+              v3
+            </span>
           </Link>
 
           <nav className="ml-1 flex flex-1 items-center gap-1 sm:ml-4">
@@ -156,6 +163,15 @@ export default function AppNav() {
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("oposita-upload"))}
+              title="Subir tus apuntes de la academia en PDF"
+              className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-2 text-sm font-bold text-white shadow-[0_3px_0_#92400e] transition-all hover:brightness-110 active:translate-y-0.5 active:shadow-none"
+            >
+              <Upload className="h-4 w-4" />
+              <span className="hidden md:inline">Subir PDF</span>
+            </button>
+            <button
+              type="button"
               onClick={toggleMascot}
               title={mascotOn ? "Dejar descansar a Oposita" : "Despertar a Oposita"}
               aria-label={mascotOn ? "Ocultar a Oposita" : "Mostrar a Oposita"}
@@ -164,6 +180,14 @@ export default function AppNav() {
               {mascotOn ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               <span className="hidden md:inline">{mascotOn ? "Oposita" : "Oposita zzz"}</span>
             </button>
+            <Link
+              href="/diagnostico"
+              title="Diagnóstico: comprueba base de datos, tablas y BOE"
+              aria-label="Diagnóstico"
+              className="rounded-full bg-white/80 p-2.5 text-stone-600 shadow-sm ring-1 ring-black/10 transition-all hover:-rotate-3 hover:text-amber-900"
+            >
+              <Stethoscope className="h-4 w-4" />
+            </Link>
             <button
               type="button"
               onClick={() => setDialog(true)}

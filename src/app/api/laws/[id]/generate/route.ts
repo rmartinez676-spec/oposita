@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { attempts, lawArticles } from "@/db/schema";
-import { applyScope, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
+import { applyScope, dbFail, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 import { buildHangman, buildIndex, buildOrder, buildPairs, generateQuestions } from "@/lib/generator";
 import type { AttemptKind, QuestionType, Scope } from "@/lib/quizTypes";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,6 +19,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
 
@@ -86,7 +88,6 @@ export async function POST(request: Request, { params }: Ctx) {
     }
     return fail("Tipo de juego no válido");
   } catch (error) {
-    console.error("POST /api/laws/[id]/generate", error);
-    return fail("No se pudo generar el contenido", 500);
+    return dbFail(error);
   }
 }

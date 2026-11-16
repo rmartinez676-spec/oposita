@@ -4,6 +4,7 @@ import { Caveat, Kalam, Patrick_Hand, Shadows_Into_Light_Two } from "next/font/g
 import "./globals.css";
 import AppNav from "@/components/AppNav";
 import Mascot from "@/components/Mascot";
+import UploadNotesLauncher from "@/components/UploadNotesLauncher";
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppNav />
         {children}
         <Mascot />
+        <UploadNotesLauncher />
       </body>
     </html>
   );

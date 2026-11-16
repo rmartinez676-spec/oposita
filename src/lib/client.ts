@@ -2,91 +2,80 @@
 
 const WS_KEY = "oposita-workspace";
 const WS_COOKIE = "oposita_ws";
-const VALID = /^[A-Za-z0-9_-]{8,64}$/;
-
-/** Copia en memoria por si el navegador bloquea localStorage y las cookies. */
-let memoryId = "";
+const WS_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
 function randomId(): string {
   try {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID().replace(/-/g, "");
-    }
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID().replace(/-/g, "");
   } catch {
     /* sin contexto seguro */
   }
-  try {
-    const a = new Uint8Array(16);
-    crypto.getRandomValues(a);
-    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
-  } catch {
-    /* sin crypto */
-  }
-  let s = "";
-  while (s.length < 24) s += Math.random().toString(36).slice(2);
-  return s.slice(0, 32);
+  return Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 10)).join("");
 }
 
-function readCookie(): string {
+function readCookie(): string | null {
   try {
-    const m = document.cookie.match(new RegExp(`(?:^|; )${WS_COOKIE}=([^;]+)`));
-    return m ? decodeURIComponent(m[1]) : "";
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${WS_COOKIE}=([A-Za-z0-9_-]{8,64})`));
+    return m ? m[1] : null;
   } catch {
-    return "";
-  }
-}
-
-function writeCookie(id: string) {
-  try {
-    const secure = window.location.protocol === "https:";
-    document.cookie = `${WS_COOKIE}=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=${secure ? "None; Secure" : "Lax"}`;
-  } catch {
-    /* cookies bloqueadas */
+    return null;
   }
 }
 
 function persist(id: string) {
-  memoryId = id;
+  // Guardamos el código en varios sitios: si el navegador borra uno, no se "pierde" tu mesa.
   try {
     window.localStorage.setItem(WS_KEY, id);
   } catch {
-    /* localStorage bloqueado */
+    /* modo privado / bloqueado */
   }
-  writeCookie(id);
+  try {
+    window.sessionStorage.setItem(WS_KEY, id);
+  } catch {
+    /* ignorar */
+  }
+  try {
+    document.cookie = `${WS_COOKIE}=${id}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch {
+    /* ignorar */
+  }
 }
 
-/** Devuelve siempre un id válido: localStorage → cookie → memoria → uno nuevo. */
 export function getWorkspaceId(): string {
   if (typeof window === "undefined") return "";
-  let id = "";
-  try {
-    id = window.localStorage.getItem(WS_KEY) ?? "";
-  } catch {
-    /* localStorage bloqueado */
+  // La cookie manda: es la misma que usa el servidor, así la mesa y las subidas
+  // siempre caen en el mismo espacio aunque localStorage tenga un código viejo.
+  let id: string | null = readCookie();
+  if (!id || !WS_RE.test(id)) {
+    try {
+      id = window.localStorage.getItem(WS_KEY);
+    } catch {
+      /* ignorar */
+    }
   }
-  if (!VALID.test(id)) id = readCookie();
-  if (!VALID.test(id)) id = memoryId;
-  if (!VALID.test(id)) id = randomId();
-  if (id !== memoryId) persist(id);
+  if (!id || !WS_RE.test(id)) {
+    try {
+      id = window.sessionStorage.getItem(WS_KEY);
+    } catch {
+      /* ignorar */
+    }
+  }
+  if (!id || !WS_RE.test(id)) id = randomId();
+  persist(id);
   return id;
 }
 
 export function setWorkspaceId(id: string): boolean {
-  if (!VALID.test(id)) return false;
+  if (!WS_RE.test(id)) return false;
   persist(id);
   return true;
 }
 
-/**
- * fetch con el espacio de trabajo por tres vías a la vez (cabecera, parámetro ?ws= y cookie),
- * para que algún proxy o navegador que descarte una de ellas no rompa la app.
- */
+/** fetch con la cabecera del espacio de trabajo. */
 export function wsFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  const id = getWorkspaceId();
   const headers = new Headers(init.headers);
-  headers.set("x-workspace-id", id);
-  const url = `${input}${input.includes("?") ? "&" : "?"}ws=${encodeURIComponent(id)}`;
-  return fetch(url, { ...init, headers, cache: "no-store", credentials: "same-origin" });
+  headers.set("x-workspace-id", getWorkspaceId());
+  return fetch(input, { ...init, headers, cache: "no-store" });
 }
 
 export async function api<T>(
@@ -100,16 +89,36 @@ export async function api<T>(
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(json);
   }
-  const res = await wsFetch(input, { ...rest, headers, body });
-  let data: unknown = null;
+
+  let res: Response;
   try {
-    data = await res.json();
+    res = await wsFetch(input, { ...rest, headers, body });
   } catch {
-    /* sin cuerpo */
+    throw new Error("No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.");
   }
+
+  const contentType = res.headers.get("content-type") ?? "";
+  let data: unknown = null;
+  if (contentType.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      /* cuerpo vacío */
+    }
+  }
+
   if (!res.ok) {
     const msg = (data as { error?: string } | null)?.error;
-    throw new Error(msg || "Algo ha fallado. Inténtalo de nuevo.");
+    if (msg) throw new Error(msg);
+    if ((res.status === 401 || res.status === 403) && !contentType.includes("json")) {
+      throw new Error(
+        "Vercel está bloqueando la API con su protección de despliegue. En Vercel → Settings → Deployment Protection, desactiva «Vercel Authentication» para producción.",
+      );
+    }
+    if (res.status === 504 || res.status === 508) {
+      throw new Error("El servidor tardó demasiado (límite de tiempo de Vercel). Prueba con una ley más corta o súbela como PDF.");
+    }
+    throw new Error(`El servidor respondió ${res.status}. Inténtalo de nuevo en unos segundos.`);
   }
   return data as T;
 }

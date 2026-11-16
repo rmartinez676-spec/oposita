@@ -4,7 +4,7 @@ import { parseLaw } from "@/lib/lawParser";
 import { boeHtmlToText, decodeTextFile, fetchBoeLaw, normalizeBoeId, pdfToText } from "@/lib/boe";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 /** Lee un archivo (PDF / TXT / HTML del BOE) o una norma del BOE y dice qué ha encontrado. */
 export async function POST(request: Request) {

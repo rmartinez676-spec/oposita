@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { attempts, lawArticles, laws, notes } from "@/db/schema";
-import { fail, workspaceOf } from "@/lib/server";
+import { dbFail, fail, workspaceOf } from "@/lib/server";
 import { parseLaw } from "@/lib/lawParser";
 import { fetchBoeLaw, normalizeBoeId } from "@/lib/boe";
 import { addOpo, autoShortName, BRANCH_ICON, guessBranch, pickColor } from "@/lib/catalog";
 import { gradeOf } from "@/lib/quizTypes";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const str = (v: unknown, max = 400) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
   const ws = workspaceOf(request);
   if (!ws) return fail("Falta el espacio de trabajo");
   try {
+    await ensureSchema();
     const rows = await db.select().from(laws).where(eq(laws.workspaceId, ws)).orderBy(desc(laws.createdAt));
     const att = await db
       .select({
@@ -52,8 +54,7 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
-    console.error("GET /api/laws", error);
-    return fail("No se pudieron cargar tus leyes", 500);
+    return dbFail(error);
   }
 }
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
   const ws = workspaceOf(request);
   if (!ws) return fail("Falta el espacio de trabajo");
   try {
+    await ensureSchema();
     const body = await request.json();
     const boeInput = str(body.boeId, 200);
     const boeId = boeInput ? normalizeBoeId(boeInput) : null;
@@ -92,7 +94,10 @@ export async function POST(request: Request) {
         if (!name) name = out.title;
         source = "boe";
       } catch (e) {
-        return fail(e instanceof Error ? e.message : "No se pudo descargar la ley del BOE", 502);
+        return fail(
+          `${e instanceof Error ? e.message : "No se pudo descargar la ley del BOE."} Si pasa siempre, sube la ley como PDF o texto.`,
+          502,
+        );
       }
     } else if (str(body.source, 20) === "archivo") {
       source = "archivo";
@@ -141,8 +146,8 @@ export async function POST(request: Request) {
         body: a.body,
         position: a.position,
       }));
-      for (let i = 0; i < rows.length; i += 250) {
-        await db.insert(lawArticles).values(rows.slice(i, i + 250));
+      for (let i = 0; i < rows.length; i += 400) {
+        await db.insert(lawArticles).values(rows.slice(i, i + 400));
       }
     } catch (e) {
       await db.delete(laws).where(eq(laws.id, law.id));
@@ -151,7 +156,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ law, existed: false, articleCount: parsed.articles.length }, { status: 201 });
   } catch (error) {
-    console.error("POST /api/laws", error);
-    return fail("No se pudo guardar la ley", 500);
+    return dbFail(error);
   }
 }

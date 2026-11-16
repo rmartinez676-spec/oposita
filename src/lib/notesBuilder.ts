@@ -111,13 +111,17 @@ function noteFromChunk(
         }
       }
     } else {
-      const picks = facts.filter((f) => f.targets.some((t) => t.kind !== "termino")).slice(0, 3);
-      const base = picks.length ? picks : facts.slice(0, 1);
-      if (!base.length) {
+      // Esquema: UNA sola idea clave por artículo, recortada. Nada de copiar la ley.
+      const key =
+        facts.find((f) => f.targets.some((t) => t.kind === "numero" || t.kind === "digito" || t.kind === "fraccion")) ??
+        facts.find((f) => f.targets.some((t) => t.kind === "entidad")) ??
+        facts[0];
+      if (key) {
+        lines.push(`- ${highlight(snippet(key.text, 150), seenEntities)}`);
+      } else {
         const first = stripMarker((a.body.split("\n")[0] ?? "").trim()).text;
-        if (first) lines.push(`- ${highlight(snippet(first, 200), seenEntities)}`);
+        if (first) lines.push(`- ${highlight(snippet(first, 150), seenEntities)}`);
       }
-      for (const f of base) lines.push(`- ${highlight(f.text, seenEntities)}`);
     }
 
     if (detail === "completo") {
@@ -129,23 +133,25 @@ function noteFromChunk(
     lines.push("");
   }
 
-  const figures = keyFacts.slice(0, 30);
-  if (figures.length) {
-    lines.push("# Cifras y plazos clave");
-    for (const f of figures) lines.push(`- ${f.label} → ${highlight(snippet(f.text, 150))}`);
-    lines.push("");
-  }
-
-  const ents = [...entityCount.entries()]
-    .sort((a, b) => b[1].size - a[1].size)
-    .slice(0, 14);
-  if (ents.length) {
-    lines.push("# Órganos y figuras que aparecen");
-    for (const [name, set] of ents) {
-      const nums = [...set].slice(0, 7).join(", ");
-      lines.push(`- **${name}** → ${nums}${set.size > 7 ? "…" : ""}`);
+  if (detail === "completo") {
+    const figures = keyFacts.slice(0, 30);
+    if (figures.length) {
+      lines.push("# Cifras y plazos clave");
+      for (const f of figures) lines.push(`- ${f.label} → ${highlight(snippet(f.text, 150))}`);
+      lines.push("");
     }
-    lines.push("");
+
+    const ents = [...entityCount.entries()]
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, 14);
+    if (ents.length) {
+      lines.push("# Órganos y figuras que aparecen");
+      for (const [name, set] of ents) {
+        const nums = [...set].slice(0, 7).join(", ");
+        lines.push(`- **${name}** → ${nums}${set.size > 7 ? "…" : ""}`);
+      }
+      lines.push("");
+    }
   }
 
   lines.push("! Repasa en voz alta y haz el test de este bloque antes de pasar al siguiente.");

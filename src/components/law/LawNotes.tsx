@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Loader2, NotebookPen, PenLine, Sparkles, X } from "lucide-react";
+import { Check, Loader2, NotebookPen, PenLine, Sparkles, Upload, X } from "lucide-react";
 import { api, oposita } from "@/lib/client";
 import type { NoteDraft, NoteItem } from "@/lib/apuntes";
 import type { ArticleItem, LawListItem } from "@/lib/lawStyle";
@@ -10,6 +10,7 @@ import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
 import NoteViewer from "@/components/NoteViewer";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import UploadNotesDialog from "@/components/UploadNotesDialog";
 import ScopePicker from "./ScopePicker";
 
 type LawRow = Omit<LawListItem, "stats">;
@@ -32,6 +33,7 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
   const [editing, setEditing] = useState<NoteItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [toDelete, setToDelete] = useState<NoteItem | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -180,6 +182,13 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
           >
             <PenLine className="h-4.5 w-4.5" /> Escribir un apunte propio
           </button>
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[15px] font-bold text-amber-800 shadow-sm ring-1 ring-amber-600/30 transition-all hover:-rotate-1"
+          >
+            <Upload className="h-4.5 w-4.5" /> Subir mis apuntes (PDF)
+          </button>
         </div>
 
         {notice && (
@@ -249,6 +258,20 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
           }}
           onDelete={(n) => setToDelete(n)}
           onToggleFav={toggleFav}
+        />
+      )}
+
+      {uploadOpen && (
+        <UploadNotesDialog
+          lawId={law.id}
+          lawName={law.shortName || law.name}
+          onClose={() => setUploadOpen(false)}
+          onImported={(created) => {
+            setNotes((prev) => [...created, ...(prev ?? [])]);
+            setUploadOpen(false);
+            flash(true, `¡${created.length} ${created.length === 1 ? "hoja importada" : "hojas importadas"} de tu PDF!`);
+            onChanged();
+          }}
         />
       )}
 

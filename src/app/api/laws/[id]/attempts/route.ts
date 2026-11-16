@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { attempts } from "@/db/schema";
-import { fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
+import { dbFail, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 import type { AnswerDetail, Question } from "@/lib/quizTypes";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,6 +20,7 @@ export async function GET(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     const rows = await db
@@ -39,8 +42,7 @@ export async function GET(request: Request, { params }: Ctx) {
       .limit(150);
     return NextResponse.json(rows);
   } catch (error) {
-    console.error("GET attempts", error);
-    return fail("No se pudo cargar el historial", 500);
+    return dbFail(error);
   }
 }
 
@@ -50,6 +52,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     const body = await request.json();
@@ -88,7 +91,6 @@ export async function POST(request: Request, { params }: Ctx) {
       .returning({ id: attempts.id });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    console.error("POST attempts", error);
-    return fail("No se pudo guardar el resultado", 500);
+    return dbFail(error);
   }
 }

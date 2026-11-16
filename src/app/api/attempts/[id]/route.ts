@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { attempts } from "@/db/schema";
-import { fail, parseId, workspaceOf } from "@/lib/server";
+import { dbFail, fail, parseId, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -14,6 +16,7 @@ export async function GET(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const [row] = await db
       .select()
       .from(attempts)
@@ -21,8 +24,7 @@ export async function GET(request: Request, { params }: Ctx) {
     if (!row) return fail("Intento no encontrado", 404);
     return NextResponse.json(row);
   } catch (error) {
-    console.error("GET attempt", error);
-    return fail("No se pudo abrir el test", 500);
+    return dbFail(error);
   }
 }
 
@@ -32,6 +34,7 @@ export async function DELETE(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const [row] = await db
       .delete(attempts)
       .where(and(eq(attempts.id, id), eq(attempts.workspaceId, ws)))
@@ -39,7 +42,6 @@ export async function DELETE(request: Request, { params }: Ctx) {
     if (!row) return fail("Intento no encontrado", 404);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("DELETE attempt", error);
-    return fail("No se pudo borrar", 500);
+    return dbFail(error);
   }
 }

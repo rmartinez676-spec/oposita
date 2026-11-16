@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema } from "@/db/ensure";
 import { lawArticles, notes } from "@/db/schema";
-import { applyScope, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
+import { applyScope, dbFail, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 import { buildNotes, type NoteDetail } from "@/lib/notesBuilder";
 import type { Scope } from "@/lib/quizTypes";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,6 +19,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
+    await ensureSchema();
     const law = await findOwnLaw(ws, id);
     if (!law) return fail("Ley no encontrada", 404);
     const body = await request.json();
@@ -56,7 +58,6 @@ export async function POST(request: Request, { params }: Ctx) {
       .returning();
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    console.error("POST /api/laws/[id]/notes", error);
-    return fail("No se pudieron generar los apuntes", 500);
+    return dbFail(error);
   }
 }

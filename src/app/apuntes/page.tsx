@@ -13,6 +13,7 @@ import {
   Sparkles,
   Star,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { CATEGORIES, formatDate, wordCount, type NoteDraft, type NoteItem } from "@/lib/apuntes";
@@ -22,6 +23,7 @@ import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
 import NoteViewer from "@/components/NoteViewer";
 import StudyMode from "@/components/StudyMode";
+import UploadNotesDialog from "@/components/UploadNotesDialog";
 import { ScaleDoodle, SquiggleLine } from "@/components/Doodles";
 
 type SortKey = "recientes" | "antiguos" | "az" | "favoritos";
@@ -44,14 +46,25 @@ export default function HomePage() {
 
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [studyOpen, setStudyOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<NoteItem | null>(null);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadNotesRef = useRef<(() => void) | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(""), 2600);
+  }, []);
+
+  /* Si se suben PDFs desde el botón global de la barra, recargamos el cuaderno. */
+  useEffect(() => {
+    const onImported = () => {
+      loadNotesRef.current?.();
+    };
+    window.addEventListener("oposita-notes-imported", onImported);
+    return () => window.removeEventListener("oposita-notes-imported", onImported);
   }, []);
 
   /* ------------------------------ Carga ------------------------------ */
@@ -61,16 +74,16 @@ export default function HomePage() {
       api<LawListItem[]>("/api/laws")
         .then(setLaws)
         .catch(() => {});
-      const res = await wsFetch("/api/notes");
-      if (!res.ok) throw new Error("bad");
-      const data = (await res.json()) as NoteItem[];
+      const data = await api<NoteItem[]>("/api/notes");
       setNotes(data);
-    } catch {
-      setLoadError("No se pudo abrir el cuaderno. ¿Revisamos la conexión?");
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "No se pudo abrir el cuaderno. ¿Revisamos la conexión?");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  loadNotesRef.current = loadNotes;
 
   useEffect(() => {
     loadNotes();
@@ -301,7 +314,16 @@ export default function HomePage() {
             </select>
           )}
 
-          <div className="ml-auto flex gap-2.5">
+          <div className="ml-auto flex flex-wrap gap-2.5">
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-amber-800 shadow-sm ring-1 ring-amber-600/30 transition-all hover:-rotate-1"
+            >
+              <Upload className="h-4.5 w-4.5" />
+              <span className="hidden sm:inline">Subir mis apuntes (PDF)</span>
+              <span className="sm:hidden">Subir PDF</span>
+            </button>
             <button
               type="button"
               onClick={() => setStudyOpen(true)}
@@ -510,6 +532,17 @@ export default function HomePage() {
       )}
 
       {studyOpen && <StudyMode notes={filtered} onClose={() => setStudyOpen(false)} />}
+
+      {uploadOpen && (
+        <UploadNotesDialog
+          onClose={() => setUploadOpen(false)}
+          onImported={(created) => {
+            setNotes((prev) => [...created, ...prev]);
+            setUploadOpen(false);
+            showToast(`¡${created.length} ${created.length === 1 ? "hoja importada" : "hojas importadas"} de tu PDF!`);
+          }}
+        />
+      )}
 
       {pendingDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

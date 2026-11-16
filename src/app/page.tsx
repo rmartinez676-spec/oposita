@@ -14,6 +14,7 @@ import {
   Target,
   Timer,
   Trophy,
+  Upload,
   X,
 } from "lucide-react";
 import { api, oposita } from "@/lib/client";
@@ -38,9 +39,14 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     try {
       setError("");
-      const [l, s] = await Promise.all([api<LawListItem[]>("/api/laws"), api<StatsSummary>("/api/stats")]);
+      // Las leyes son lo importante: si las estadísticas fallan, la mesa se ve igual.
+      const l = await api<LawListItem[]>("/api/laws");
       setLaws(l);
-      setStats(s);
+      try {
+        setStats(await api<StatsSummary>("/api/stats"));
+      } catch {
+        setStats(null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo abrir tu mesa de estudio");
     } finally {
@@ -142,6 +148,13 @@ export default function DashboardPage() {
           >
             <FolderPlus className="h-4.5 w-4.5" /> Añadir ley
           </button>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("oposita-upload"))}
+            className="flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[15px] font-bold text-amber-800 shadow-sm ring-1 ring-amber-600/30 transition-all hover:-rotate-1"
+          >
+            <Upload className="h-4.5 w-4.5" /> Subir apuntes (PDF)
+          </button>
         </div>
       </header>
 
@@ -155,16 +168,27 @@ export default function DashboardPage() {
         <div className="pop-in mx-auto mt-10 max-w-md -rotate-1 rounded-lg bg-[#fffdf4] p-8 text-center shadow-xl ring-1 ring-black/10">
           <p className="font-hand-caveat text-3xl font-bold text-rose-700">¡Se cayó la mesa!</p>
           <p className="mt-1 text-stone-500">{error}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              load();
-            }}
-            className="btn-primary-hand mt-4 rounded-full px-5 py-2 font-bold text-white"
-          >
-            Reintentar
-          </button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                load();
+              }}
+              className="btn-primary-hand rounded-full px-5 py-2 font-bold text-white"
+            >
+              Reintentar
+            </button>
+            <Link
+              href="/diagnostico"
+              className="rounded-full bg-white px-5 py-2 font-bold text-stone-600 shadow-sm ring-1 ring-black/10 transition-all hover:-rotate-1"
+            >
+              Ver diagnóstico
+            </Link>
+          </div>
+          <p className="mt-3 text-[12px] leading-snug text-stone-500">
+            El diagnóstico comprueba la base de datos y el BOE en el servidor y te dice qué arreglar.
+          </p>
         </div>
       ) : laws.length === 0 ? (
         /* ------------------------------ Bienvenida ------------------------------ */
@@ -206,7 +230,18 @@ export default function DashboardPage() {
               >
                 <FolderPlus className="h-5 w-5" /> Subir una ley
               </button>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("oposita-upload"))}
+                className="flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[16px] font-bold text-amber-800 shadow-sm ring-1 ring-amber-600/30 transition-all hover:-rotate-1"
+              >
+                <Upload className="h-5 w-5" /> Subir mis apuntes (PDF)
+              </button>
             </div>
+            <p className="mt-4 text-[12px] leading-snug text-stone-500">
+              ¿Subiste leyes desde otro navegador u otra opción y no las ves? Cada código de estudio tiene su propia
+              mesa: pulsa la <strong>llave</strong> de la barra de arriba y pega tu código para traerlas aquí.
+            </p>
           </div>
         </section>
       ) : (
@@ -349,6 +384,19 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      <footer className="mt-14 text-center">
+        <p className="text-[13px] leading-snug text-stone-500">
+          ¿Algo no carga o no descarga las leyes?{" "}
+          <Link
+            href="/diagnostico"
+            className="font-bold text-amber-800 underline decoration-dashed underline-offset-2"
+          >
+            Abre el diagnóstico
+          </Link>{" "}
+          y te dice exactamente qué arreglar en tu despliegue.
+        </p>
+      </footer>
 
       {adding && (
         <AddLawDialog
