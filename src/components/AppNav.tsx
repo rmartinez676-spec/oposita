@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Check, Copy, Eye, EyeOff, FolderOpen, FolderPlus, KeyRound, Search, X } from "lucide-react";
-import { getWorkspaceId, setWorkspaceId, storageGet } from "@/lib/client";
-import AddLawDialog from "./AddLawDialog";
+import { usePathname } from "next/navigation";
+import { BookOpen, Check, Copy, Eye, EyeOff, FolderOpen, KeyRound, Search, X } from "lucide-react";
+import { getWorkspaceId, setWorkspaceId } from "@/lib/client";
 
 const LINKS = [
   { href: "/", label: "Mi mesa", icon: FolderOpen },
-  { href: "/oposiciones", label: "Oposiciones y temarios", icon: Search },
+  { href: "/oposiciones", label: "Oposiciones", icon: Search },
   { href: "/apuntes", label: "Cuaderno", icon: BookOpen },
 ];
 
@@ -99,13 +98,11 @@ function WorkspaceDialog({ onClose }: { onClose: () => void }) {
 
 export default function AppNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const [mascotOn, setMascotOn] = useState(true);
   const [dialog, setDialog] = useState(false);
-  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    setMascotOn(storageGet("oposita-mascot") !== "off");
+    setMascotOn(window.localStorage.getItem("oposita-mascot") !== "off");
   }, []);
 
   const toggleMascot = () => {
@@ -159,15 +156,6 @@ export default function AppNav() {
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setAdding(true)}
-              title="Añadir una ley a mi mesa"
-              className="btn-primary-hand flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold text-white"
-            >
-              <FolderPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Añadir ley</span>
-            </button>
-            <button
-              type="button"
               onClick={toggleMascot}
               title={mascotOn ? "Dejar descansar a Oposita" : "Despertar a Oposita"}
               aria-label={mascotOn ? "Ocultar a Oposita" : "Mostrar a Oposita"}
@@ -189,15 +177,6 @@ export default function AppNav() {
         </div>
       </header>
       {dialog && <WorkspaceDialog onClose={() => setDialog(false)} />}
-      {adding && (
-        <AddLawDialog
-          onClose={() => setAdding(false)}
-          onCreated={(id) => {
-            setAdding(false);
-            router.push(`/leyes/${id}`);
-          }}
-        />
-      )}
     </>
   );
 }

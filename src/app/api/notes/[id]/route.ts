@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notes } from "@/db/schema";
-import { fail, findOwnLaw, parseId, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const id = parseId((await params).id);
     if (!id) return fail("Id no válido");
@@ -46,7 +46,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
 export async function DELETE(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const id = parseId((await params).id);
     if (!id) return fail("Id no válido");

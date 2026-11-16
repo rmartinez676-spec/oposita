@@ -3,14 +3,14 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notes } from "@/db/schema";
 import { SEED_NOTES } from "@/lib/seed";
-import { fail, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
 /** Carga los apuntes de ejemplo a petición del usuario (solo si no tiene ninguno). */
 export async function POST(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const existing = await db.select({ id: notes.id }).from(notes).where(eq(notes.workspaceId, ws)).limit(1);
     if (existing.length === 0) {

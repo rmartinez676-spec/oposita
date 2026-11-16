@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { attempts } from "@/db/schema";
-import { fail, findOwnLaw, parseId, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 import type { AnswerDetail, Question } from "@/lib/quizTypes";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ const toInt = (v: unknown, max: number) => Math.max(0, Math.min(max, Math.floor(
 
 export async function GET(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
@@ -46,7 +46,7 @@ export async function GET(request: Request, { params }: Ctx) {
 
 export async function POST(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {

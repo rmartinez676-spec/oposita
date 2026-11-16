@@ -11,7 +11,7 @@ export interface GeneratedNote {
   tags: string;
 }
 
-export type NoteDetail = "completo" | "esquema" | "ampliado";
+export type NoteDetail = "completo" | "esquema";
 
 /** Marca cifras/plazos con rotulador (==…==) y órganos con negrita subrayada (**…**). */
 function highlight(text: string, seenEntities?: Set<string>): string {
@@ -59,7 +59,7 @@ function noteFromChunk(
   const range = rangeLabel(arts);
   lines.push(`# ${blockLabel || "Texto de la ley"}`);
   lines.push(
-    `${shortName} · ${range} · ${arts.length} ${arts.length === 1 ? "artículo" : "artículos"}${detail === "esquema" ? " · esquema de ideas clave" : detail === "ampliado" ? " · ampliado con claves y autotest" : " · texto completo ordenado"}`,
+    `${shortName} · ${range} · ${arts.length} ${arts.length === 1 ? "artículo" : "artículos"}${detail === "esquema" ? " · esquema de ideas clave" : " · texto completo ordenado"}`,
   );
 
   const chapters: { name: string; first: ArticleLite; last: ArticleLite }[] = [];
@@ -97,7 +97,7 @@ function noteFromChunk(
       }
     }
 
-    if (detail !== "esquema") {
+    if (detail === "completo") {
       for (const para of a.body.split("\n")) {
         const raw = para.trim();
         if (!raw) continue;
@@ -120,28 +120,10 @@ function noteFromChunk(
       for (const f of base) lines.push(`- ${highlight(f.text, seenEntities)}`);
     }
 
-    if (detail !== "esquema") {
+    if (detail === "completo") {
       const figs = facts.filter(hasKeyFigure).slice(0, 2);
       for (const f of figs) {
         lines.push(`! Ojo al dato (${f.label}): ${highlight(snippet(f.text, 170))}`);
-      }
-
-      if (detail === "ampliado") {
-        const isFigure = (k: string) => k === "numero" || k === "digito" || k === "fraccion";
-        const keyEnts = [...new Set(facts.flatMap((f) => f.targets.filter((t) => t.kind === "entidad").map((t) => t.text)))].slice(0, 6);
-        const keyFigs = [...new Set(facts.flatMap((f) => f.targets.filter((t) => isFigure(t.kind)).map((t) => t.text)))].slice(0, 6);
-        if (keyEnts.length || keyFigs.length) {
-          lines.push(`Claves de ${label}: ${[...keyEnts.map((e) => `**${e}**`), ...keyFigs.map((x) => `==${x}==`)].join(" · ")}`);
-        }
-        // Autotest: la frase con un hueco y la respuesta al lado, para tapar y repasar
-        const drills = facts
-          .map((f) => ({ f, t: f.targets.find((x) => isFigure(x.kind)) ?? f.targets.find((x) => x.kind === "entidad" || x.kind === "termino") }))
-          .filter((d): d is { f: Fact; t: NonNullable<typeof d.t> } => !!d.t)
-          .slice(0, 2);
-        for (const { f, t } of drills) {
-          const blanked = `${f.text.slice(0, t.start)}_____${f.text.slice(t.end)}`;
-          if (blanked.length <= 230) lines.push(`- Autotest ${f.label}: ${blanked} → ==${t.text}==`);
-        }
       }
     }
     lines.push("");
@@ -181,20 +163,15 @@ function noteFromChunk(
 export function buildNotes(
   law: { name: string; shortName: string },
   articles: ArticleLite[],
-  opts: { detail: NoteDetail; maxPerNote?: number; mergeLabel?: string },
+  opts: { detail: NoteDetail; maxPerNote?: number },
 ): GeneratedNote[] {
   const shortName = law.shortName || law.name;
   const max = opts.maxPerNote ?? 22;
   const groups: { block: string; arts: ArticleLite[] }[] = [];
-  if (opts.mergeLabel) {
-    // Selección o rango: un único apunte (que se divide solo si es muy largo)
-    groups.push({ block: opts.mergeLabel, arts: articles });
-  } else {
-    for (const a of articles) {
-      const g = groups[groups.length - 1];
-      if (g && g.block === a.block) g.arts.push(a);
-      else groups.push({ block: a.block, arts: [a] });
-    }
+  for (const a of articles) {
+    const g = groups[groups.length - 1];
+    if (g && g.block === a.block) g.arts.push(a);
+    else groups.push({ block: a.block, arts: [a] });
   }
   const notes: GeneratedNote[] = [];
   for (const g of groups) {

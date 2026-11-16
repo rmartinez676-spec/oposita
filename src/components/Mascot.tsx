@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { storageGet, storageSet, type MascotEventDetail } from "@/lib/client";
+import type { MascotEventDetail } from "@/lib/client";
 
 type Mode = "idle" | "walk" | "hop" | "cheer" | "think";
 
@@ -97,7 +97,7 @@ export default function Mascot() {
 
   /* ------------------------------ Montaje ------------------------------ */
   useEffect(() => {
-    const off = storageGet(KEY) === "off";
+    const off = window.localStorage.getItem(KEY) === "off";
     const small = window.innerWidth < 640;
     const h = small ? 118 : 150;
     setH(h);
@@ -109,8 +109,8 @@ export default function Mascot() {
     setPos(start);
     setReady(true);
 
-    if (!off && !storageGet("oposita-greeted", true)) {
-      storageSet("oposita-greeted", "1", true);
+    if (!off && !window.sessionStorage.getItem("oposita-greeted")) {
+      window.sessionStorage.setItem("oposita-greeted", "1");
       window.setTimeout(() => say("¡Hola! Soy Oposita 👋 Tócame para un consejo… o arrástrame."), 1400);
     }
 
@@ -175,7 +175,7 @@ export default function Mascot() {
     const onToggle = (e: Event) => {
       const on = Boolean((e as CustomEvent<{ enabled: boolean }>).detail?.enabled);
       setEnabled(on);
-      storageSet(KEY, on ? "on" : "off");
+      window.localStorage.setItem(KEY, on ? "on" : "off");
     };
     window.addEventListener("oposita", onEvt);
     window.addEventListener("oposita-toggle", onToggle);

@@ -52,20 +52,12 @@ export default function AddLawDialog({ defaultOpo = "", onClose, onCreated }: Ad
     setError("");
     setAnalysis(null);
     try {
-      if (file.size > 30 * 1024 * 1024) throw new Error("El archivo pesa demasiado (máximo 30 MB).");
-      const res = await wsFetch(`/api/laws/extract?name=${encodeURIComponent(file.name)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: file,
-      });
-      let data: (Analysis & { error?: string }) | null = null;
-      try {
-        data = await res.json();
-      } catch {
-        /* respuesta sin JSON */
-      }
-      if (!res.ok || !data) throw new Error(data?.error || `No se pudo leer el archivo (código ${res.status}).`);
-      applyAnalysis(data);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await wsFetch("/api/laws/extract", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo leer el archivo");
+      applyAnalysis(data as Analysis);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo leer el archivo");
     } finally {

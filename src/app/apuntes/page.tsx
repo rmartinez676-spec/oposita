@@ -16,12 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { CATEGORIES, formatDate, wordCount, type NoteDraft, type NoteItem } from "@/lib/apuntes";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FolderPlus } from "lucide-react";
 import { api, wsFetch } from "@/lib/client";
 import type { LawListItem } from "@/lib/lawStyle";
-import AddLawDialog from "@/components/AddLawDialog";
 import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
 import NoteViewer from "@/components/NoteViewer";
@@ -41,8 +37,6 @@ export default function HomePage() {
   const [sort, setSort] = useState<SortKey>("recientes");
   const [laws, setLaws] = useState<LawListItem[]>([]);
   const [lawFilter, setLawFilter] = useState<string>("todas");
-  const [addingLaw, setAddingLaw] = useState(false);
-  const router = useRouter();
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<NoteItem | null>(null);
@@ -67,10 +61,12 @@ export default function HomePage() {
       api<LawListItem[]>("/api/laws")
         .then(setLaws)
         .catch(() => {});
-      const data = await api<NoteItem[]>("/api/notes");
+      const res = await wsFetch("/api/notes");
+      if (!res.ok) throw new Error("bad");
+      const data = (await res.json()) as NoteItem[];
       setNotes(data);
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "No se pudo abrir el cuaderno.");
+    } catch {
+      setLoadError("No se pudo abrir el cuaderno. ¿Revisamos la conexión?");
     } finally {
       setLoading(false);
     }
@@ -220,21 +216,6 @@ export default function HomePage() {
               <p className="mt-1.5 max-w-md text-[15px] leading-snug text-stone-600">
                 Tus apuntes escritos a mano: los que redactas tú y los que Oposita genera a partir de tus leyes.
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAddingLaw(true)}
-                  className="btn-primary-hand flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-bold text-white"
-                >
-                  <FolderPlus className="h-4 w-4" /> Añadir una ley
-                </button>
-                <Link
-                  href="/oposiciones"
-                  className="flex items-center gap-2 rounded-full bg-teal-700 px-4 py-2 text-[14px] font-bold text-white shadow-[0_3px_0_#115e59] transition-all hover:brightness-110 active:translate-y-0.5 active:shadow-none"
-                >
-                  <Search className="h-4 w-4" /> Añadir el temario de mi oposición
-                </Link>
-              </div>
             </div>
           </div>
 
@@ -410,7 +391,7 @@ export default function HomePage() {
           </div>
         ) : loadError ? (
           <div className="pop-in mx-auto max-w-md -rotate-1 rounded-lg bg-[#fffdf4] p-8 text-center shadow-xl ring-1 ring-black/10">
-            <p className="font-hand-caveat text-3xl font-bold text-rose-700">No he podido abrir el cuaderno</p>
+            <p className="font-hand-caveat text-3xl font-bold text-rose-700">¡Se cayó el cuaderno!</p>
             <p className="mt-1 text-stone-500">{loadError}</p>
             <button
               type="button"
@@ -515,16 +496,6 @@ export default function HomePage() {
             setEditing(null);
           }}
           onSave={handleSave}
-        />
-      )}
-
-      {addingLaw && (
-        <AddLawDialog
-          onClose={() => setAddingLaw(false)}
-          onCreated={(id) => {
-            setAddingLaw(false);
-            router.push(`/leyes/${id}`);
-          }}
         />
       )}
 

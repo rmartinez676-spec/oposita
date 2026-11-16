@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { attempts } from "@/db/schema";
-import { fail, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, workspaceOf } from "@/lib/server";
 import { summarizeAttempts } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** Estadísticas globales de todas tus leyes. */
 export async function GET(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const rows = await db
       .select({

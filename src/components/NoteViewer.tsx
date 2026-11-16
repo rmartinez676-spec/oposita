@@ -6,7 +6,6 @@ import {
   Clock3,
   Copy,
   PenLine,
-  PlusCircle,
   Printer,
   Star,
   Trash2,
@@ -29,8 +28,6 @@ interface NoteViewerProps {
   onEdit: (note: NoteItem) => void;
   onDelete: (note: NoteItem) => void;
   onToggleFav: (note: NoteItem) => void;
-  /** Si se pasa, aparece el botón «Ampliar» para añadir más contenido a este apunte */
-  onExtend?: (note: NoteItem) => void;
 }
 
 function escapeHtml(s: string): string {
@@ -108,7 +105,7 @@ function printNote(note: NoteItem) {
   window.setTimeout(() => w.print(), 400);
 }
 
-export default function NoteViewer({ note, onClose, onEdit, onDelete, onToggleFav, onExtend }: NoteViewerProps) {
+export default function NoteViewer({ note, onClose, onEdit, onDelete, onToggleFav }: NoteViewerProps) {
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -149,11 +146,6 @@ export default function NoteViewer({ note, onClose, onEdit, onDelete, onToggleFa
           >
             <PenLine className="h-4 w-4" /> Editar
           </button>
-          {onExtend && (
-            <button type="button" className={`${actionBtn} !bg-amber-100 !text-amber-900`} onClick={() => onExtend(note)}>
-              <PlusCircle className="h-4 w-4" /> Ampliar
-            </button>
-          )}
           <button type="button" className={actionBtn} onClick={copyText}>
             {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
             {copied ? "¡Copiado!" : "Copiar texto"}

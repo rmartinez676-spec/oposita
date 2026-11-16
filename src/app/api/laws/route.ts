@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { attempts, lawArticles, laws, notes } from "@/db/schema";
-import { fail, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, workspaceOf } from "@/lib/server";
 import { parseLaw } from "@/lib/lawParser";
 import { fetchBoeLaw, normalizeBoeId } from "@/lib/boe";
 import { addOpo, autoShortName, BRANCH_ICON, guessBranch, pickColor } from "@/lib/catalog";
@@ -15,7 +15,7 @@ const str = (v: unknown, max = 400) => (typeof v === "string" ? v.trim().slice(0
 
 export async function GET(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const rows = await db.select().from(laws).where(eq(laws.workspaceId, ws)).orderBy(desc(laws.createdAt));
     const att = await db
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const body = await request.json();
     const boeInput = str(body.boeId, 200);

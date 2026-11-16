@@ -3,7 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appMeta, notes } from "@/db/schema";
 import { SEED_NOTES } from "@/lib/seed";
-import { fail, findOwnLaw, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { fail, findOwnLaw, workspaceOf } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ async function ensureSeeded(ws: string) {
 
 export async function GET(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const lawIdParam = new URL(request.url).searchParams.get("lawId");
     const lawId = lawIdParam ? Number(lawIdParam) : null;
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   try {
     const body = await request.json();
     const title = String(body.title ?? "").trim();

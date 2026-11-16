@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { attempts, lawArticles } from "@/db/schema";
-import { applyScope, fail, findOwnLaw, parseId, workspaceOf , NO_WORKSPACE_MSG } from "@/lib/server";
+import { applyScope, fail, findOwnLaw, parseId, workspaceOf } from "@/lib/server";
 import { buildHangman, buildIndex, buildOrder, buildPairs, generateQuestions } from "@/lib/generator";
 import type { AttemptKind, QuestionType, Scope } from "@/lib/quizTypes";
 
@@ -14,7 +14,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /** Genera un test o los datos de un juego a partir del texto de la ley. */
 export async function POST(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail(NO_WORKSPACE_MSG);
+  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {

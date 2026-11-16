@@ -24,8 +24,7 @@ interface LawNotesProps {
 export default function LawNotes({ law, articles, preset, onChanged }: LawNotesProps) {
   const [notes, setNotes] = useState<NoteItem[] | null>(null);
   const [scope, setScope] = useState<Scope>({ mode: "all" });
-  const [detail, setDetail] = useState<"completo" | "esquema" | "ampliado">("completo");
-  const [target, setTarget] = useState<number | "">("");
+  const [detail, setDetail] = useState<"completo" | "esquema">("completo");
   const [generating, setGenerating] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
@@ -63,21 +62,10 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
     setGenerating(true);
     setNotice(null);
     try {
-      const out = await api<{ created: NoteItem[]; updated: NoteItem | null }>(`/api/laws/${law.id}/notes`, {
-        method: "POST",
-        json: { scope, detail, appendToNoteId: target || undefined },
-      });
-      if (out.updated) {
-        const up = out.updated;
-        setNotes((prev) => (prev ?? []).map((n) => (n.id === up.id ? up : n)));
-        flash(true, `¡Apunte ampliado! Ahora tiene ${up.content.split(/\s+/).length.toLocaleString("es-ES")} palabras.`);
-        setTarget("");
-      } else {
-        const created = out.created;
-        setNotes((prev) => [...created, ...(prev ?? [])]);
-        const words = created.reduce((s, n) => s + n.content.split(/\s+/).length, 0);
-        flash(true, `¡${created.length} ${created.length === 1 ? "apunte creado" : "apuntes creados"}! ${words.toLocaleString("es-ES")} palabras de tinta.`);
-      }
+      const created = await api<NoteItem[]>(`/api/laws/${law.id}/notes`, { method: "POST", json: { scope, detail } });
+      setNotes((prev) => [...created, ...(prev ?? [])]);
+      const words = created.reduce((s, n) => s + n.content.split(/\s+/).length, 0);
+      flash(true, `¡${created.length} ${created.length === 1 ? "apunte creado" : "apuntes creados"}! ${words.toLocaleString("es-ES")} palabras de tinta.`);
       oposita({ say: "¡Apuntes listos! A subrayar se ha dicho ✏️", mood: "cheer" });
       onChanged();
     } catch (e) {
@@ -158,7 +146,6 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
         <div className="mt-4 flex flex-wrap gap-2">
           {[
             { v: "completo" as const, l: "Apuntes completos", d: "Todo el texto, resaltado" },
-            { v: "ampliado" as const, l: "Ampliados + autotest", d: "Con claves y preguntas" },
             { v: "esquema" as const, l: "Esquema de ideas clave", d: "Solo lo esencial" },
           ].map((m) => (
             <button
@@ -173,28 +160,6 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
           ))}
         </div>
 
-        {notes && notes.length > 0 && (
-          <div className="mt-4">
-            <p className="font-hand-caveat text-[20px] font-semibold leading-none text-amber-900">¿Dónde lo añado?</p>
-            <select
-              value={target}
-              onChange={(e) => setTarget(e.target.value ? Number(e.target.value) : "")}
-              className="input-paper mt-2 w-full cursor-pointer px-3 py-2 text-sm"
-              aria-label="Destino de los apuntes generados"
-            >
-              <option value="">Crear apuntes nuevos</option>
-              {notes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  Ampliar: {n.title.slice(0, 70)}
-                </option>
-              ))}
-            </select>
-            {target !== "" && (
-              <p className="mt-1 text-[12px] text-stone-500">El contenido se añadirá al final de ese apunte, sin borrar nada de lo que ya tiene.</p>
-            )}
-          </div>
-        )}
-
         <div className="mt-5 flex flex-wrap gap-2.5">
           <button
             type="button"
@@ -203,7 +168,7 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
             className="btn-primary-hand flex items-center gap-2 rounded-full px-6 py-3 text-[16px] font-bold text-white disabled:opacity-60"
           >
             {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <NotebookPen className="h-5 w-5" />}
-            {generating ? "Escribiendo a mano…" : target !== "" ? "Ampliar apunte" : "Generar apuntes"}
+            {generating ? "Escribiendo a mano…" : "Generar apuntes"}
           </button>
           <button
             type="button"
@@ -284,12 +249,6 @@ export default function LawNotes({ law, articles, preset, onChanged }: LawNotesP
           }}
           onDelete={(n) => setToDelete(n)}
           onToggleFav={toggleFav}
-          onExtend={(n) => {
-            setTarget(n.id);
-            setViewingId(null);
-            panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-            flash(true, "Elige qué parte de la ley añadir y pulsa «Ampliar apunte».");
-          }}
         />
       )}
 

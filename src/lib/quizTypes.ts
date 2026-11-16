@@ -37,12 +37,10 @@ export const KIND_INFO: Record<AttemptKind, { label: string; emoji: string }> = 
 };
 
 export interface Scope {
-  mode: "all" | "block" | "range" | "ids";
+  mode: "all" | "block" | "range";
   block?: string;
   from?: number;
   to?: number;
-  /** Artículos elegidos a mano (mode = "ids") */
-  ids?: number[];
 }
 
 /** Nota sobre 10. En test se aplica la penalización clásica de oposiciones (−1/3 por fallo). */

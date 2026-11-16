@@ -278,14 +278,6 @@ export default function LawPage() {
               setTestPreset({ scope: { mode: "block", block }, key: Date.now() });
               setTab("tests");
             }}
-            onNotesSelection={(ids) => {
-              setNotePreset({ scope: { mode: "ids", ids }, key: Date.now() });
-              setTab("apuntes");
-            }}
-            onTestSelection={(ids) => {
-              setTestPreset({ scope: { mode: "ids", ids }, key: Date.now() });
-              setTab("tests");
-            }}
           />
         )}
         {tab === "stats" && (

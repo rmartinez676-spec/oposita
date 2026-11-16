@@ -4,41 +4,29 @@ import { db } from "@/db";
 import { laws } from "@/db/schema";
 import type { Scope } from "./quizTypes";
 
-const WS_RE = /^[A-Za-z0-9_-]{8,128}$/;
-
-export const NO_WORKSPACE_MSG =
-  "No he podido identificar tu espacio de estudio. Recarga la página (Ctrl+F5) e inténtalo de nuevo.";
+const WS_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
 /**
- * Cada visitante se identifica con un id aleatorio. Lo aceptamos por tres vías, la primera válida gana:
- * cabecera x-workspace-id, parámetro ?ws= de la URL o cookie oposita_ws.
+ * Cada visitante identifica su espacio de trabajo. Se acepta, por orden:
+ * la cabecera x-workspace-id, el parámetro ?ws= de la URL o la cookie oposita_ws
+ * (así funciona aunque un proxy o el navegador descarten alguno de los canales).
  */
 export function workspaceOf(req: Request): string | null {
-  const candidates: string[] = [];
-  const header = req.headers.get("x-workspace-id");
-  if (header) candidates.push(...header.split(","));
+  const ok = (v: string | null | undefined) => (v && WS_RE.test(v) ? v : null);
+
+  const fromHeader = ok(req.headers.get("x-workspace-id"));
+  if (fromHeader) return fromHeader;
+
   try {
-    const q = new URL(req.url).searchParams.get("ws");
-    if (q) candidates.push(q);
+    const fromQuery = ok(new URL(req.url).searchParams.get("ws"));
+    if (fromQuery) return fromQuery;
   } catch {
-    /* url no analizable */
+    /* URL no analizable */
   }
-  const cookie = req.headers.get("cookie");
-  if (cookie) {
-    const m = cookie.match(/(?:^|;\s*)oposita_ws=([^;]+)/);
-    if (m) {
-      try {
-        candidates.push(decodeURIComponent(m[1]));
-      } catch {
-        candidates.push(m[1]);
-      }
-    }
-  }
-  for (const c of candidates) {
-    const v = c.trim();
-    if (WS_RE.test(v)) return v;
-  }
-  return null;
+
+  const cookie = req.headers.get("cookie") ?? "";
+  const m = cookie.match(/(?:^|;\s*)oposita_ws=([^;]+)/);
+  return ok(m ? decodeURIComponent(m[1]) : null);
 }
 
 export function fail(message: string, status = 400) {
@@ -58,16 +46,11 @@ export async function findOwnLaw(ws: string, id: number) {
   return law ?? null;
 }
 
-export function applyScope<T extends { id: number; kind: string; number: string; block: string }>(
+export function applyScope<T extends { kind: string; number: string; block: string }>(
   articles: T[],
   scope?: Scope,
 ): { list: T[]; label: string } {
   if (!scope || scope.mode === "all") return { list: articles, label: "Toda la ley" };
-  if (scope.mode === "ids") {
-    const set = new Set((scope.ids ?? []).map(Number));
-    const list = articles.filter((a) => set.has(a.id));
-    return { list, label: `Mi selección (${list.length} ${list.length === 1 ? "artículo" : "artículos"})` };
-  }
   if (scope.mode === "block") {
     const b = scope.block ?? "";
     return { list: articles.filter((a) => a.block === b), label: b || "Bloque" };

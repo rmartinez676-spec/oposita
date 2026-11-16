@@ -31,11 +31,6 @@ export default function ScopePicker({ articles, value, onChange, allowRange = tr
   const max = numbers.length ? Math.max(...numbers) : 1;
 
   const modes: { id: Scope["mode"]; label: string; show: boolean }[] = [
-    {
-      id: "ids",
-      label: `Mi selección (${value.ids?.length ?? 0} ${(value.ids?.length ?? 0) === 1 ? "artículo" : "artículos"})`,
-      show: value.mode === "ids",
-    },
     { id: "all", label: "Toda la ley", show: true },
     { id: "block", label: "Por título / bloque", show: blocks.length > 1 },
     { id: "range", label: "Rango de artículos", show: allowRange && numbers.length > 3 },
@@ -57,7 +52,6 @@ export default function ScopePicker({ articles, value, onChange, allowRange = tr
               type="button"
               className={chip(value.mode === m.id)}
               onClick={() => {
-                if (m.id === "ids") return;
                 if (m.id === "all") onChange({ mode: "all" });
                 else if (m.id === "block") onChange({ mode: "block", block: value.block ?? blocks[0]?.name ?? "" });
                 else onChange({ mode: "range", from: value.from ?? min, to: value.to ?? Math.min(max, min + 29) });
