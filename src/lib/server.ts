@@ -4,29 +4,24 @@ import { db } from "@/db";
 import { laws } from "@/db/schema";
 import type { Scope } from "./quizTypes";
 
-const WS_RE = /^[A-Za-z0-9_-]{8,64}$/;
+const ID_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
 /**
- * Cada visitante identifica su espacio de trabajo. Se acepta, por orden:
- * la cabecera x-workspace-id, el parámetro ?ws= de la URL o la cookie oposita_ws
- * (así funciona aunque un proxy o el navegador descarten alguno de los canales).
+ * Cada visitante identifica su espacio de trabajo por la cabecera x-workspace-id,
+ * por el parámetro ?ws= o por la cookie oposita-ws (en ese orden), por si algún proxy
+ * o navegador descarta alguno de los canales.
  */
 export function workspaceOf(req: Request): string | null {
-  const ok = (v: string | null | undefined) => (v && WS_RE.test(v) ? v : null);
-
-  const fromHeader = ok(req.headers.get("x-workspace-id"));
-  if (fromHeader) return fromHeader;
-
+  const fromHeader = req.headers.get("x-workspace-id") ?? "";
+  if (ID_RE.test(fromHeader)) return fromHeader;
   try {
-    const fromQuery = ok(new URL(req.url).searchParams.get("ws"));
-    if (fromQuery) return fromQuery;
+    const q = new URL(req.url).searchParams.get("ws") ?? "";
+    if (ID_RE.test(q)) return q;
   } catch {
-    /* URL no analizable */
+    /* url no analizable */
   }
-
-  const cookie = req.headers.get("cookie") ?? "";
-  const m = cookie.match(/(?:^|;\s*)oposita_ws=([^;]+)/);
-  return ok(m ? decodeURIComponent(m[1]) : null);
+  const m = (req.headers.get("cookie") ?? "").match(/(?:^|;\s*)oposita-ws=([A-Za-z0-9_-]{8,64})/);
+  return m ? m[1] : null;
 }
 
 export function fail(message: string, status = 400) {

@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   try {
     const id = parseId((await params).id);
     if (!id) return fail("Id no válido");
@@ -46,7 +46,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
 export async function DELETE(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   try {
     const id = parseId((await params).id);
     if (!id) return fail("Id no válido");

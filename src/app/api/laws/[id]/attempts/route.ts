@@ -14,7 +14,7 @@ const toInt = (v: unknown, max: number) => Math.max(0, Math.min(max, Math.floor(
 
 export async function GET(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {
@@ -46,7 +46,7 @@ export async function GET(request: Request, { params }: Ctx) {
 
 export async function POST(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {

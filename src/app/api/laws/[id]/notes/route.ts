@@ -14,7 +14,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /** Crea apuntes COMPLETOS (uno por título / bloque) a partir de los artículos de la ley. */
 export async function POST(request: Request, { params }: Ctx) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   const id = parseId((await params).id);
   if (!id) return fail("Id no válido");
   try {

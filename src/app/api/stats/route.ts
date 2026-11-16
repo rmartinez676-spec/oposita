@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** Estadísticas globales de todas tus leyes. */
 export async function GET(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   try {
     const rows = await db
       .select({

@@ -21,7 +21,7 @@ async function ensureSeeded(ws: string) {
 
 export async function GET(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   try {
     const lawIdParam = new URL(request.url).searchParams.get("lawId");
     const lawId = lawIdParam ? Number(lawIdParam) : null;
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const ws = workspaceOf(request);
-  if (!ws) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!ws) return fail("Falta el espacio de trabajo");
   try {
     const body = await request.json();
     const title = String(body.title ?? "").trim();

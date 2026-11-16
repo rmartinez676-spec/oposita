@@ -8,7 +8,7 @@ export const maxDuration = 120;
 
 /** Lee un archivo (PDF / TXT / HTML del BOE) o una norma del BOE y dice qué ha encontrado. */
 export async function POST(request: Request) {
-  if (!workspaceOf(request)) return fail("No he podido identificar tu espacio de estudio. Recarga la página e inténtalo de nuevo.");
+  if (!workspaceOf(request)) return fail("Falta el espacio de trabajo");
   try {
     const type = request.headers.get("content-type") ?? "";
 
